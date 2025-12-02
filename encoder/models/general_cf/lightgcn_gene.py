@@ -30,8 +30,8 @@ class LightGCN_gene(BaseModel):
         self.re_temperature = self.hyper_config['re_temperature']
 
         # semantic-embeddings
-        usrprf_embeds = t.tensor(configs['usrprf_embeds']).float().cuda()
-        itmprf_embeds = t.tensor(configs['itmprf_embeds']).float().cuda()
+        usrprf_embeds = t.tensor(configs['usrprf_embeds']).float().to(configs['device'])
+        itmprf_embeds = t.tensor(configs['itmprf_embeds']).float().to(configs['device'])
         self.prf_embeds = t.concat([usrprf_embeds, itmprf_embeds], dim=0)
 
         # generative process

@@ -34,8 +34,8 @@ class AutoCF_plus(BaseModel):
         self.sampler = LocalGraph()
 
         # side information
-        self.usrprf_embeds = t.tensor(configs['usrprf_embeds']).float().cuda()
-        self.itmprf_embeds = t.tensor(configs['itmprf_embeds']).float().cuda()
+        self.usrprf_embeds = t.tensor(configs['usrprf_embeds']).float().to(configs['device'])
+        self.itmprf_embeds = t.tensor(configs['itmprf_embeds']).float().to(configs['device'])
         self.mlp = nn.Sequential(
             nn.Linear(self.usrprf_embeds.shape[1], (self.usrprf_embeds.shape[1] + self.embedding_size) // 2),
             nn.LeakyReLU(),
@@ -53,7 +53,7 @@ class AutoCF_plus(BaseModel):
         idxs = self.adj._indices()
         vals = t.ones_like(self.adj._values())
         shape = self.adj.shape
-        return t.sparse.FloatTensor(idxs, vals, shape).cuda()
+        return t.sparse.FloatTensor(idxs, vals, shape).to(configs['device'])
     
     def get_ego_embeds(self):
         return t.concat([self.user_embeds, self.item_embeds], axis=0)
@@ -149,12 +149,12 @@ class GTLayer(nn.Module):
         att = t.einsum('ehd, ehd -> eh', qEmbeds, kEmbeds)
         att = t.clamp(att, -10.0, 10.0)
         expAtt = t.exp(att)
-        tem = t.zeros([adj.shape[0], self.head_num]).cuda()
+        tem = t.zeros([adj.shape[0], self.head_num]).to(configs['device'])
         attNorm = (tem.index_add_(0, rows, expAtt))[rows]
         att = expAtt / (attNorm + 1e-8) # eh
         
         resEmbeds = t.einsum('eh, ehd -> ehd', att, vEmbeds).view([-1, self.embedding_size])
-        tem = t.zeros([adj.shape[0], self.embedding_size]).cuda()
+        tem = t.zeros([adj.shape[0], self.embedding_size]).to(configs['device'])
         resEmbeds = tem.index_add_(0, rows, resEmbeds) # nd
         return resEmbeds
 
@@ -164,7 +164,7 @@ class LocalGraph(nn.Module):
         self.seed_num = configs['model']['seed_num']
     
     def makeNoise(self, scores):
-        noise = t.rand(scores.shape).cuda()
+        noise = t.rand(scores.shape).to(configs['device'])
         noise[noise == 0] = 1e-8
         noise = -t.log(-t.log(noise))
         return t.log(scores) + noise
@@ -227,7 +227,7 @@ class RandomMaskSubgraphs(nn.Module):
                 nxtSeeds = t.unique(t.concat(nxtSeeds))
                 maskNodes.append(nxtSeeds)
         sampNum = int((self.user_num + self.item_num) * self.keep_rate)
-        sampedNodes = t.randint(self.user_num + self.item_num, size=[sampNum]).cuda()
+        sampedNodes = t.randint(self.user_num + self.item_num, size=[sampNum]).to(configs['device'])
         if self.flag == False:
             l1 = adj._values().shape[0]
             l2 = rows.shape[0]
@@ -243,14 +243,14 @@ class RandomMaskSubgraphs(nn.Module):
             print('-----')
 
         
-        encoder_adj = self.normalizeAdj(t.sparse.FloatTensor(t.stack([rows, cols], dim=0), t.ones_like(rows).cuda(), adj.shape))
+        encoder_adj = self.normalizeAdj(t.sparse.FloatTensor(t.stack([rows, cols], dim=0), t.ones_like(rows).to(configs['device']), adj.shape))
 
         temNum = maskNodes.shape[0]
-        temRows = maskNodes[t.randint(temNum, size=[adj._values().shape[0]]).cuda()]
-        temCols = maskNodes[t.randint(temNum, size=[adj._values().shape[0]]).cuda()]
+        temRows = maskNodes[t.randint(temNum, size=[adj._values().shape[0]]).to(configs['device'])]
+        temCols = maskNodes[t.randint(temNum, size=[adj._values().shape[0]]).to(configs['device'])]
 
-        newRows = t.concat([temRows, temCols, t.arange(self.user_num+self.item_num).cuda(), rows])
-        newCols = t.concat([temCols, temRows, t.arange(self.user_num+self.item_num).cuda(), cols])
+        newRows = t.concat([temRows, temCols, t.arange(self.user_num+self.item_num).to(configs['device']), rows])
+        newCols = t.concat([temCols, temRows, t.arange(self.user_num+self.item_num).to(configs['device']), cols])
 
         # filter duplicated
         hashVal = newRows * (self.user_num + self.item_num) + newCols
@@ -259,5 +259,5 @@ class RandomMaskSubgraphs(nn.Module):
         newRows = ((hashVal - newCols) / (self.user_num + self.item_num)).long()
 
 
-        decoder_adj = t.sparse.FloatTensor(t.stack([newRows, newCols], dim=0), t.ones_like(newRows).cuda().float(), adj.shape)
+        decoder_adj = t.sparse.FloatTensor(t.stack([newRows, newCols], dim=0), t.ones_like(newRows).to(configs['device']).float(), adj.shape)
         return encoder_adj, decoder_adj

@@ -23,8 +23,8 @@ class SGL_plus(LightGCN):
         self.kd_temperature = self.hyper_config['kd_temperature']
 
         # semantic-embeddings
-        self.usrprf_embeds = t.tensor(configs['usrprf_embeds']).float().cuda()
-        self.itmprf_embeds = t.tensor(configs['itmprf_embeds']).float().cuda()
+        self.usrprf_embeds = t.tensor(configs['usrprf_embeds']).float().to(configs['device'])
+        self.itmprf_embeds = t.tensor(configs['itmprf_embeds']).float().to(configs['device'])
         self.mlp = nn.Sequential(
             nn.Linear(self.usrprf_embeds.shape[1], (self.usrprf_embeds.shape[1] + self.embedding_size) // 2),
             nn.LeakyReLU(),

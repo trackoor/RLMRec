@@ -23,8 +23,8 @@ class SimGCL_plus(LightGCN):
         self.eps = self.hyper_config['eps']
 
         # semantic-embedding
-        self.usrprf_embeds = t.tensor(configs['usrprf_embeds']).float().cuda()
-        self.itmprf_embeds = t.tensor(configs['itmprf_embeds']).float().cuda()
+        self.usrprf_embeds = t.tensor(configs['usrprf_embeds']).float().to(configs['device'])
+        self.itmprf_embeds = t.tensor(configs['itmprf_embeds']).float().to(configs['device'])
         self.mlp = nn.Sequential(
             nn.Linear(self.usrprf_embeds.shape[1], (self.usrprf_embeds.shape[1] + self.embedding_size) // 2),
             nn.LeakyReLU(),
@@ -39,7 +39,7 @@ class SimGCL_plus(LightGCN):
                 init(m.weight)
 
     def _perturb_embedding(self, embeds):
-        noise = (F.normalize(t.rand(embeds.shape).cuda(), p=2) * t.sign(embeds)) * self.eps
+        noise = (F.normalize(t.rand(embeds.shape).to(configs['device']), p=2) * t.sign(embeds)) * self.eps
         return embeds + noise
     
     def forward(self, adj=None, perturb=False):

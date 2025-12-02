@@ -18,7 +18,7 @@ class SimGCL(LightGCN):
         self.eps = self.hyper_config['eps']
 
     def _perturb_embedding(self, embeds):
-        noise = (F.normalize(t.rand(embeds.shape).cuda(), p=2) * t.sign(embeds)) * self.eps
+        noise = (F.normalize(t.rand(embeds.shape).to(configs['device']), p=2) * t.sign(embeds)) * self.eps
         return embeds + noise
     
     def forward(self, adj=None, perturb=False):

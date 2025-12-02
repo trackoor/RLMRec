@@ -35,8 +35,8 @@ class GCCF_gene(BaseModel):
         self.gcnLayers = nn.Sequential(*[GCNLayer(self.embedding_size) for i in range(self.layer_num)])
         self.is_training = True
 
-        usrprf_embeds = t.tensor(configs['usrprf_embeds']).float().cuda()
-        itmprf_embeds = t.tensor(configs['itmprf_embeds']).float().cuda()
+        usrprf_embeds = t.tensor(configs['usrprf_embeds']).float().to(configs['device'])
+        itmprf_embeds = t.tensor(configs['itmprf_embeds']).float().to(configs['device'])
         self.prf_embeds = t.concat([usrprf_embeds, itmprf_embeds], dim=0)
 
         # generative process

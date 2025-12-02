@@ -27,10 +27,10 @@ class DCCF_gene(BaseModel):
         self.all_h_list = list(plain_adj.row)
         self.all_t_list = list(plain_adj.col)
         self.A_in_shape = plain_adj.shape
-        self.A_indices = torch.tensor([self.all_h_list, self.all_t_list], dtype=torch.long).cuda()
-        self.D_indices = torch.tensor([list(range(self.user_num + self.item_num)), list(range(self.user_num + self.item_num))], dtype=torch.long).cuda()
-        self.all_h_list = torch.LongTensor(self.all_h_list).cuda()
-        self.all_t_list = torch.LongTensor(self.all_t_list).cuda()
+        self.A_indices = torch.tensor([self.all_h_list, self.all_t_list], dtype=torch.long).to(configs['device'])
+        self.D_indices = torch.tensor([list(range(self.user_num + self.item_num)), list(range(self.user_num + self.item_num))], dtype=torch.long).to(configs['device'])
+        self.all_h_list = torch.LongTensor(self.all_h_list).to(configs['device'])
+        self.all_t_list = torch.LongTensor(self.all_t_list).to(configs['device'])
         self.G_indices, self.G_values = self._cal_sparse_adj()
 
         # hyper-parameter
@@ -54,8 +54,8 @@ class DCCF_gene(BaseModel):
         self.final_embeds = False
 
         # semantic-embeddings
-        usrprf_embeds = torch.tensor(configs['usrprf_embeds']).float().cuda()
-        itmprf_embeds = torch.tensor(configs['itmprf_embeds']).float().cuda()
+        usrprf_embeds = torch.tensor(configs['usrprf_embeds']).float().to(configs['device'])
+        itmprf_embeds = torch.tensor(configs['itmprf_embeds']).float().to(configs['device'])
         self.prf_embeds = torch.concat([usrprf_embeds, itmprf_embeds], dim=0)
 
         # generative process
@@ -76,8 +76,8 @@ class DCCF_gene(BaseModel):
         init(self.item_embeds.weight)
 
     def _cal_sparse_adj(self):
-        A_values = torch.ones(size=(len(self.all_h_list), 1)).view(-1).cuda()
-        A_tensor = torch_sparse.SparseTensor(row=self.all_h_list, col=self.all_t_list, value=A_values, sparse_sizes=self.A_in_shape).cuda()
+        A_values = torch.ones(size=(len(self.all_h_list), 1)).view(-1).to(configs['device'])
+        A_tensor = torch_sparse.SparseTensor(row=self.all_h_list, col=self.all_t_list, value=A_values, sparse_sizes=self.A_in_shape).to(configs['device'])
         D_values = A_tensor.sum(dim=1).pow(-0.5)
         G_indices, G_values = torch_sparse.spspmm(self.D_indices, D_values, self.A_indices, A_values, self.A_in_shape[0], self.A_in_shape[1], self.A_in_shape[1])
         G_indices, G_values = torch_sparse.spspmm(G_indices, G_values, self.D_indices, D_values, self.A_in_shape[0], self.A_in_shape[1], self.A_in_shape[1])
@@ -87,7 +87,7 @@ class DCCF_gene(BaseModel):
         head_embeddings = torch.nn.functional.normalize(head_embeddings)
         tail_embeddings = torch.nn.functional.normalize(tail_embeddings)
         edge_alpha = (torch.sum(head_embeddings * tail_embeddings, dim=1).view(-1) + 1) / 2
-        A_tensor = torch_sparse.SparseTensor(row=self.all_h_list, col=self.all_t_list, value=edge_alpha, sparse_sizes=self.A_in_shape).cuda()
+        A_tensor = torch_sparse.SparseTensor(row=self.all_h_list, col=self.all_t_list, value=edge_alpha, sparse_sizes=self.A_in_shape).to(configs['device'])
         D_scores_inv = A_tensor.sum(dim=1).pow(-1).nan_to_num(0, 0, 0).view(-1)
         G_indices = torch.stack([self.all_h_list, self.all_t_list], dim=0)
         G_values = D_scores_inv[self.all_h_list] * edge_alpha

@@ -25,8 +25,8 @@ class SimGCL_gene(LightGCN_gene):
         self.re_temperature = self.hyper_config['re_temperature']
 
         # semantic-embeddings
-        usrprf_embeds = t.tensor(configs['usrprf_embeds']).float().cuda()
-        itmprf_embeds = t.tensor(configs['itmprf_embeds']).float().cuda()
+        usrprf_embeds = t.tensor(configs['usrprf_embeds']).float().to(configs['device'])
+        itmprf_embeds = t.tensor(configs['itmprf_embeds']).float().to(configs['device'])
         self.prf_embeds = t.concat([usrprf_embeds, itmprf_embeds], dim=0)
 
         # generative process
@@ -51,7 +51,7 @@ class SimGCL_gene(LightGCN_gene):
     
 
     def _perturb_embedding(self, embeds):
-        noise = (F.normalize(t.rand(embeds.shape).cuda(), p=2) * t.sign(embeds)) * self.eps
+        noise = (F.normalize(t.rand(embeds.shape).to(configs['device']), p=2) * t.sign(embeds)) * self.eps
         return embeds + noise
     
     def forward(self, adj=None, perturb=False, masked_user_embeds=None, masked_item_embeds=None):
