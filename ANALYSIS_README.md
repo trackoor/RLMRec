@@ -1,4 +1,4 @@
-# RLMRec: Project Analysis & Guide
+# Quantifying Representation Learning with Large Language Models for Recommendation
 
 
 ## Part 1: The Basics

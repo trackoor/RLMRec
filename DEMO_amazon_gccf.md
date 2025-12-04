@@ -1,4 +1,4 @@
-# Amazon GCCF — Graphs Overview (CS291A Demo)
+# Quantifying Representation Learning with Large Language Models for Recommendation (Demo)
 
 Audience: UC Santa Barbara CS291A (Instructor: Tao Tyang)
 
