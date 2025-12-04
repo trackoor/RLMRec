@@ -1,7 +1,7 @@
 # RLMRec: Project Analysis & Guide
 
 
-## Part 1: The Basics (For "Non-Experts")
+## Part 1: The Basics
 
 ### 1. What is the "Graph"?
 In this project, we are building a **Recommender System** using a method called **LightGCN**. To understand it, imagine a giant network (a Graph):
